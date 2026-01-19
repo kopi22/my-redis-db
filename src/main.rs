@@ -16,12 +16,23 @@ async fn main() {
 
 async fn handle_connection(mut socket: TcpStream, addr: SocketAddr) {
     let mut buffer= [0; 1024];
-    let bytes_read = socket.read(&mut buffer).await.unwrap();
 
-    if bytes_read == 0 {
-        println!("Client {:?} disconnected", addr);
-        return;
+    loop {
+        let bytes_read = socket.read(&mut buffer).await.unwrap();
+
+        if bytes_read == 0 {
+            println!("Client {:?} disconnected", addr);
+            return;
+        }
+
+        let text = std::str::from_utf8(&buffer[0..bytes_read]).unwrap().trim();
+        if text == "exit" {
+            println!("Client {:?} requested disconnection", addr);
+            return;
+        } else {
+            println!("Client {:?} sent: {}", addr, text);
+        }
+
+        socket.write_all(&buffer[0..bytes_read]).await.unwrap();
     }
-
-    socket.write_all(&buffer[0..bytes_read]).await.unwrap();
 }
